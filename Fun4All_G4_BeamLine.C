@@ -63,7 +63,7 @@ void Fun4All_G4_BeamLine(int nEvents = -1)
   g4Reco->set_field(0);
   BeamLineMagnetSubsystem *bl = nullptr;
   int imagnet=0;
-  std::ifstream infile("polarimeter_magnet.dat");
+  std::ifstream infile("ip12_magnet.dat");
   if (infile.is_open())
   {
     double biggest_z = 0.;
