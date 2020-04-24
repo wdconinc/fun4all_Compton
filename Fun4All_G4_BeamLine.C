@@ -31,173 +31,179 @@ void Fun4All_G4_BeamLine(int nEvents = -1)
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
-// this adds a particle gun in front of every magnet which shoots charged geantinos into them
+  // this adds a particle gun in front of every magnet which shoots charged geantinos into them
   bool add_pgun = true;
-// make magnet active volume if you want to study the hits
+
+  // make magnet active volume if you want to study the hits
   bool magnet_active=false;
   int absorberactive = 1;
-// if you insert numbers it only displays those magnets, do not comment out the set declaration
+
+  // if you insert numbers it only displays those magnets, do not comment out the set declaration
   set<int> magnetlist;
-//  magnetlist.insert(1);
-//  magnetlist.insert(3);
-// ParticleGun shoots straight into the magnets, if you want an angle, set this here
+  //  magnetlist.insert(1);
+  //  magnetlist.insert(3);
+
+  // ParticleGun shoots straight into the magnets, if you want an angle, set this here
   double px = 0.;
   double py = 0.;
   double pz = 1.;
   PHG4ParticleGun *gun = new PHG4ParticleGun();
-//   gun->set_name("pi-");
+  // gun->set_name("pi-");
   // gun->set_name("chargedgeantino");
   // gun->set_vtx(0, 0, 0); 
   // gun->set_mom(px, py, pz);
   // gun->AddParticle("chargedgeantino",0,2,pz);
   // gun->AddParticle("chargedgeantino",0,3,pz);
   // se->registerSubsystem(gun);
-//
-// Geant4 setup
-//
+
+  //
+  // Geant4 setup
+  //
   PHG4Reco* g4Reco = new PHG4Reco();
-// setup of G4: 
-//   no saving of geometry: it takes time and we do not do tracking
-//   so we do not need the geometry
+  // setup of G4: 
+  //   no saving of geometry: it takes time and we do not do tracking
+  //   so we do not need the geometry
   g4Reco->save_DST_geometry(false);
   g4Reco->set_field(0);
   BeamLineMagnetSubsystem *bl = nullptr;
   int imagnet=0;
   std::ifstream infile("ip12_magnet.dat");
   if (infile.is_open())
-  {
-    double biggest_z = 0.;
-    int imagnet = 0;
-    std::string line;
-    while (std::getline(infile, line))
     {
-//	cout << line << endl;
-      if (! line.compare(0,1,"D") || 
-	  ! line.compare(0,1,"Q") ||
-	  ! line.compare(0,1,"S"))
-      {
-	std::istringstream iss(line);
-	string magname;
-	double x;
-	double y;
-	double z;
-	double inner_radius_zin;
-	double inner_radius_zout;
-	double outer_magnet_diameter;
-	double length;
-	double angle;
-	double dipole_field_x;
-	double fieldgradient;
-	if (!(iss >> magname >> x >> y >> z 
-	      >> inner_radius_zin >> inner_radius_zout
-	      >> outer_magnet_diameter >> length
-	      >> angle >> dipole_field_x >> fieldgradient))
+      double biggest_z = 0.;
+      int imagnet = 0;
+      std::string line;
+      while (std::getline(infile, line))
 	{
-	  cout << "coud not decode " << line << endl;
-	  gSystem->Exit(1);
+	  //	cout << line << endl;
+	  if (! line.compare(0,1,"D") || 
+	      ! line.compare(0,1,"Q") ||
+	      ! line.compare(0,1,"S"))
+	    {
+	      std::istringstream iss(line);
+	      string magname;
+	      double x;
+	      double y;
+	      double z;
+	      double inner_radius_zin;
+	      double inner_radius_zout;
+	      double outer_magnet_diameter;
+	      double length;
+	      double angle;
+	      double dipole_field_x;
+	      double fieldgradient;
+	      if (!(iss >> magname >> x >> y >> z 
+		    >> inner_radius_zin >> inner_radius_zout
+		    >> outer_magnet_diameter >> length
+		    >> angle >> dipole_field_x >> fieldgradient))
+		{
+		  cout << "coud not decode " << line << endl;
+		  gSystem->Exit(1);
+		}
+	      else
+		{
+		  string magtype;
+		  if (inner_radius_zin != inner_radius_zout)
+		    {
+		      cout << "inner radius at front of magnet " << inner_radius_zin
+			   << " not equal radius at back of magnet " << inner_radius_zout
+			   << " needs change in code (replace tube by cone for beamline)" << endl;
+		      gSystem->Exit(1);
+		    }
+		  // cout << "magname: " << magname << endl;
+		  // cout << "x: " << x << endl;
+		  // cout << "y: " << y << endl;
+		  // cout << "z: " << z << endl;
+		  // cout << "inner_radius_zin: " << inner_radius_zin << endl;
+		  // cout << "inner_radius_zout: " << inner_radius_zout << endl;
+		  // cout << "outer_magnet_diameter: " << outer_magnet_diameter << endl;
+		  // cout << "length: " << length << endl;
+		  // cout << "angle: " << angle << endl;
+		  // cout << "dipole_field_x: " << dipole_field_x << endl;
+		  // cout << "fieldgradient: " << fieldgradient << endl;
+		  if (! magname.compare(0,1,"D"))
+		    {
+		      magtype = "DIPOLE";
+		    }
+		  else if (! magname.compare(0,1,"Q"))
+		    {
+		      magtype = "QUADRUPOLE";
+		    }
+		  else if (! magname.compare(0,1,"S"))
+		    {
+		      magtype = "SEXTUPOLE";
+		    }
+		  else
+		    {
+		      cout << "cannot decode magnet name " << magname << endl;
+		      gSystem->Exit(1);
+		    }
+		  // convert to our units (cm, deg)
+		  x *= 100.;
+		  y *= 100.;
+		  z *= 100.;
+		  length *= 100.;
+		  inner_radius_zin *= 100.;
+		  outer_magnet_diameter *= 100.;
+		  angle = (angle/TMath::Pi()*360.)/1000.; // given in mrad
+		  if (magnetlist.empty() || magnetlist.find(imagnet) != magnetlist.end())
+		    {
+		      bl = new BeamLineMagnetSubsystem("BEAMLINEMAGNET",imagnet);
+		      bl->set_double_param("field_x",dipole_field_x);
+		      bl->set_double_param("field_y",0.);
+		      bl->set_double_param("fieldgradient",fieldgradient);
+		      bl->set_string_param("magtype",magtype);
+		      bl->set_double_param("length",length);
+		      bl->set_double_param("place_x",x);
+		      bl->set_double_param("place_y",y);
+		      bl->set_double_param("place_z",z);
+		      bl->set_double_param("rot_y",angle);
+		      bl->set_double_param("inner_radius",inner_radius_zin);
+		      bl->set_double_param("outer_radius", outer_magnet_diameter/2.);
+		      bl->SetActive();
+		      if (absorberactive)  
+			{
+			  bl->SetAbsorberActive();
+			}
+		      bl->OverlapCheck(overlapcheck);
+		      bl->SuperDetector("BEAMLINEMAGNET");
+		      g4Reco->registerSubsystem(bl);
+		      if (add_pgun)
+			{
+			  PHG4ParticleGun *gun = new PHG4ParticleGun();
+			  //   gun->set_name("pi-");
+			  gun->set_name("chargedgeantino");
+			  gun->set_vtx(x, y, z-length/2.-0.1); 
+			  gun->set_mom(px, py, pz);
+			  se->registerSubsystem(gun);
+			}
+		    }
+		  imagnet++;
+		  if (fabs(z)+length > biggest_z)
+		    {
+		      biggest_z = fabs(z)+length;
+		    }
+		}
+	    }
 	}
-	else
+      infile.close();
+      if (biggest_z*2. > g4Reco->GetWorldSizeZ())
 	{
-	  string magtype;
-	  if (inner_radius_zin != inner_radius_zout)
-	  {
-	    cout << "inner radius at front of magnet " << inner_radius_zin
-		 << " not equal radius at back of magnet " << inner_radius_zout
-		 << " needs change in code (replace tube by cone for beamline)" << endl;
-	    gSystem->Exit(1);
-	  }
-	  // cout << "magname: " << magname << endl;
-	  // cout << "x: " << x << endl;
-	  // cout << "y: " << y << endl;
-	  // cout << "z: " << z << endl;
-	  // cout << "inner_radius_zin: " << inner_radius_zin << endl;
-	  // cout << "inner_radius_zout: " << inner_radius_zout << endl;
-	  // cout << "outer_magnet_diameter: " << outer_magnet_diameter << endl;
-	  // cout << "length: " << length << endl;
-	  // cout << "angle: " << angle << endl;
-	  // cout << "dipole_field_x: " << dipole_field_x << endl;
-	  // cout << "fieldgradient: " << fieldgradient << endl;
-	  if (! magname.compare(0,1,"D"))
-	  {
-	    magtype = "DIPOLE";
-	  }
-	  else if (! magname.compare(0,1,"Q"))
-	  {
-	    magtype = "QUADRUPOLE";
-	  }
-	  else if (! magname.compare(0,1,"S"))
-	  {
-	    magtype = "SEXTUPOLE";
-	  }
-	  else
-	  {
-	    cout << "cannot decode magnet name " << magname << endl;
-	    gSystem->Exit(1);
-	  }
-// convert to our units (cm, deg)
-	  x *= 100.;
-	  y *= 100.;
-	  z *= 100.;
-	  length *= 100.;
-	  inner_radius_zin *= 100.;
-	  outer_magnet_diameter *= 100.;
-	  angle = (angle/TMath::Pi()*360.)/1000.; // given in mrad
-	  if (magnetlist.empty() || magnetlist.find(imagnet) != magnetlist.end())
-	  {
-	    bl = new BeamLineMagnetSubsystem("BEAMLINEMAGNET",imagnet);
-	    bl->set_double_param("field_x",dipole_field_x);
-	    bl->set_double_param("field_y",0.);
-	    bl->set_double_param("fieldgradient",fieldgradient);
-	    bl->set_string_param("magtype",magtype);
-	    bl->set_double_param("length",length);
-	    bl->set_double_param("place_x",x);
-	    bl->set_double_param("place_y",y);
-	    bl->set_double_param("place_z",z);
-	    bl->set_double_param("rot_y",angle);
-	    bl->set_double_param("inner_radius",inner_radius_zin);
-	    bl->set_double_param("outer_radius", outer_magnet_diameter/2.);
-	    bl->SetActive();
-	    if (absorberactive)  
-	    {
-	      bl->SetAbsorberActive();
-	    }
-            bl->OverlapCheck(overlapcheck);
-	    bl->SuperDetector("BEAMLINEMAGNET");
-	    g4Reco->registerSubsystem(bl);
-	    if (add_pgun)
-	    {
-	      PHG4ParticleGun *gun = new PHG4ParticleGun();
-//   gun->set_name("pi-");
-	      gun->set_name("chargedgeantino");
-	      gun->set_vtx(x, y, z-length/2.-0.1); 
-	      gun->set_mom(px, py, pz);
-              se->registerSubsystem(gun);
-	    }
-	  }
-	  imagnet++;
-	  if (fabs(z)+length > biggest_z)
-	  {
-	    biggest_z = fabs(z)+length;
-	  }
+	  g4Reco->SetWorldSizeZ(biggest_z+100.); // leave 1m on both sides
 	}
-      }
     }
-    infile.close();
-    if (biggest_z*2. > g4Reco->GetWorldSizeZ())
-    {
-      g4Reco->SetWorldSizeZ(biggest_z+100.); // leave 1m on both sides
-    }
-  }
 
   se->registerSubsystem(g4Reco);
-// this (dummy) input manager just drives the event loop
+
+  // this (dummy) input manager just drives the event loop
   Fun4AllInputManager *in = new Fun4AllDummyInputManager( "Dummy");
   se->registerInputManager( in );
-// events = 0 => run forever, default is -1, do not run event loop
+
+  // events = 0 => run forever, default is -1, do not run event loop
   if (nEvents <= 0)
-  {
-    return 0;
-  }
+    {
+      return 0;
+    }
   se->run(nEvents);
   se->End();
   delete se;
