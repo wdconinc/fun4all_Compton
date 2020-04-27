@@ -161,10 +161,10 @@ ReadEICFilesCompton::process_event(PHCompositeNode *topNode)
       /*CG hacking*/
       if ( ii == 0 ){
 	auto info = new EicEventHeader();
-	info->SetWeight("unpolXsec",track_ii->GetPx());
-	info->SetWeight("polXsec",track_ii->GetPy());
-	info->SetWeight("unpolXsecOalpha",track_ii->GetPz());
-	info->SetWeight("polXsecOalpha",track_ii->GetE());
+	info->SetInfo("unpolXsec",track_ii->GetPx());
+	info->SetInfo("polXsec",track_ii->GetPy());
+	info->SetInfo("unpolXsecOalpha",track_ii->GetPz());
+	info->SetInfo("polXsecOalpha",track_ii->GetE());
 	//FIXME IOManager->WriteThisOut();
       }
       /*CG hacking*/

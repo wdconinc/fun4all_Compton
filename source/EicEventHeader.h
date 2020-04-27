@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <map>
+#include <string>
 #include <utility>
 
 class EicEventHeader: public PHObject
@@ -17,11 +18,11 @@ class EicEventHeader: public PHObject
 
   void Reset();
 
-  int SetWeight(const string name, const double val);
-  double GetWeight(const string);
+  void SetInfo(const std::string, const double);
+  double GetInfo(const std::string);
 
  protected:
-  std::map<string,double> evInfo;
+  std::map<std::string,double> evInfo;
 
   ClassDef(EicEventHeader,1)
 };

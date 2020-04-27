@@ -18,7 +18,7 @@ lib_LTLIBRARIES = \
 
 libasd_la_SOURCES = \
   EicEventHeader.cc\
-  ReadEICFiles.cc
+  ReadEICFilesCompton.cc
 
 libasd_la_LIBADD = \
   -lphool \
