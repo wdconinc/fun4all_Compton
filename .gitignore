@@ -34,3 +34,13 @@
 #Output
 *.root
 *~
+configure
+config.*
+build
+Makefile.in
+aclocal.m4
+autom4te*
+missing
+ltmain.sh
+install-sh
+depcomp
