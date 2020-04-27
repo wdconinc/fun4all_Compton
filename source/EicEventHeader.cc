@@ -11,7 +11,7 @@ EicEventHeader::~EicEventHeader()
   return;
 }
 
-int
+void
 EicEventHeader::SetInfo(const string name, const double val)
 {
   evInfo[name]=val;
@@ -23,7 +23,7 @@ EicEventHeader::GetInfo(const string name)
   map<string,double>::iterator it = evInfo.find(name);
 
   if(it != evInfo.end())
-    return it->second = val;
+    return it->second;
 
   return NAN;
 }
