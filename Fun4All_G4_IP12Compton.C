@@ -198,13 +198,14 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   auto *dipoleExitDet = new PHG4CylinderSubsystem("dExit",0);
   dipoleExitDet->set_double_param("radius", 0.0);//cm
   dipoleExitDet->set_double_param("thickness",200.0);
-  dipoleExitDet->set_double_param("length",0.1);
+  dipoleExitDet->set_double_param("length",0.1);//FIXME why doesn't this work
   dipoleExitDet->set_double_param("place_x",20);
   dipoleExitDet->set_double_param("place_y",0);
-  dipoleExitDet->set_double_param("place_z",1000);
+  dipoleExitDet->set_double_param("place_z",1000);//FIXME why doesn't this work
   dipoleExitDet->SetActive();
   g4Reco->registerSubsystem(dipoleExitDet);
   //FIXME do i need to set a maximum width for the world here?!
+  //FIXME why is vis.mac axis not drawn?
 
   se->registerSubsystem(g4Reco);
 
