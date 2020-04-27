@@ -20,7 +20,7 @@ R__LOAD_LIBRARY(libg4histos.so)
 
 #include <set>
 
-void Fun4All_G4_BeamLine(int nEvents = -1)
+void Fun4All_G4_IP12Compton(int nEvents = -1)
 {
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4testbench.so");
@@ -160,7 +160,8 @@ void Fun4All_G4_BeamLine(int nEvents = -1)
 		      bl->set_double_param("rot_y",angle);
 		      bl->set_double_param("inner_radius",inner_radius_zin);
 		      bl->set_double_param("outer_radius", outer_magnet_diameter/2.);
-		      bl->SetActive();
+		      //bl->SetActive();
+		      bl->BlackHole();
 		      if (absorberactive)  
 			{
 			  bl->SetAbsorberActive();
@@ -192,6 +193,18 @@ void Fun4All_G4_BeamLine(int nEvents = -1)
 	  g4Reco->SetWorldSizeZ(biggest_z+100.); // leave 1m on both sides
 	}
     }
+
+  //Simple flat detector
+  auto *dipoleExitDet = new PHG4CylinderSubsystem("dExit",0);
+  dipoleExitDet->set_double_param("radius", 0.0);//cm
+  dipoleExitDet->set_double_param("thickness",200.0);
+  dipoleExitDet->set_double_param("length",0.1);
+  dipoleExitDet->set_double_param("place_x",20);
+  dipoleExitDet->set_double_param("place_y",0);
+  dipoleExitDet->set_double_param("place_z",1000);
+  dipoleExitDet->SetActive();
+  g4Reco->registerSubsystem(dipoleExitDet);
+  //FIXME do i need to set a maximum width for the world here?!
 
   se->registerSubsystem(g4Reco);
 
