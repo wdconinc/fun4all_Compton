@@ -208,6 +208,10 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 
   se->registerSubsystem(g4Reco);
 
+  G4HitNtuple *hits = new G4HitNtuple("hits");
+  hits->AddNode("dExit",0);
+  se->registerSubsystem(hits);
+
   // this (dummy) input manager just drives the event loop
   Fun4AllInputManager *in = new Fun4AllDummyInputManager( "Dummy");
   se->registerInputManager( in );
