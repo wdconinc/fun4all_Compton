@@ -1,7 +1,7 @@
 // Tell emacs that this is a C++ source
 //  -*- C++ -*-.
-#ifndef G4MAIN_PHG4EVENTWGHT_H
-#define G4MAIN_PHG4EVENTWGHT_H
+#ifndef EICEVENTHEADER_H
+#define EICEVENTHEADER_H
 
 #include <phool/PHObject.h>
 
@@ -9,22 +9,21 @@
 #include <map>
 #include <utility>
 
-class PHG4EventWght: public PHObject
+class EicEventHeader: public PHObject
 {
  public:
-  PHG4EventWght() {}
-  virtual ~PHG4EventWght();
+  EicEventHeader() {}
+  virtual ~EicEventHeader();
 
   void Reset();
 
-  void AddWeight(const string);
   int SetWeight(const string name, const double val);
+  double GetWeight(const string);
 
  protected:
+  std::map<string,double> evInfo;
 
-  std::map<string,double> wghts;
-
-  ClassDef(PHG4EventWght,1)
+  ClassDef(EicEventHeader,1)
 };
 
 #endif

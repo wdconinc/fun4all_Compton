@@ -1,39 +1,36 @@
-#include "PHG4EventWght.h"
+#include "EicEventHeader.h"
 
 #include <cmath>
 #include <cstdlib>
 
 using namespace std;
 
-PHG4WventWght::~PHG4WventWght()
+EicEventHeader::~EicEventHeader()
 { 
-  wghts.clear();
+  evInfo.clear();
   return;
 }
 
-void
-PHG4WventWght::AddWeight(const string name)
-{
-  wghts.insert(make_pair(name,-999999));
-}
-
 int
-PHG4WventWght::SetWeight(const string name, const double val)
+EicEventHeader::SetInfo(const string name, const double val)
 {
-  map<string,double>::iterator it = wghts.find(name);
+  evInfo[name]=val;
+}
 
-  if(it != wghts.end()){
-    it->second = val;
-    return it - wghts.begin();
-  }
-  return -1;
+double
+EicEventHeader::GetInfo(const string name)
+{
+  map<string,double>::iterator it = evInfo.find(name);
+
+  if(it != evInfo.end())
+    return it->second = val;
+
+  return NAN;
 }
 
 void
-PHG4WventWght::Reset()
+EicEventHeader::Reset()
 {
-  wghts.find(name);
-  for(map<string,double>::iterator it = wghts.begin(); it < wghts.end(); it++)
-    it->second = -999999;
+  evInfo.clear();
 }
 
