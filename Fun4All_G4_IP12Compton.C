@@ -31,6 +31,8 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
+  bool verbose = false;
+
   // this adds a particle gun in front of every magnet which shoots charged geantinos into them
   bool add_pgun = false;
 
@@ -48,13 +50,12 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   double py = 0.;
   double pz = 1.;
   PHG4ParticleGun *gun = new PHG4ParticleGun();
-  // gun->set_name("pi-");
-  // gun->set_name("chargedgeantino");
-  // gun->set_vtx(0, 0, 0); 
-  // gun->set_mom(px, py, pz);
+  gun->set_name("chargedgeantino");
+  gun->set_vtx(20, 0, -950); //cm
+  gun->set_mom(0, 0, -1);
   // gun->AddParticle("chargedgeantino",0,2,pz);
   // gun->AddParticle("chargedgeantino",0,3,pz);
-  // se->registerSubsystem(gun);
+  se->registerSubsystem(gun);
 
   //
   // Geant4 setup
@@ -68,7 +69,6 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   g4Reco->SetWorldMaterial("G4_Galactic");
 
   BeamLineMagnetSubsystem *bl = nullptr;
-  int imagnet=0;
   std::ifstream infile("ip12_magnetV2.dat");
   if (infile.is_open())
     {
@@ -112,17 +112,20 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 			   << " needs change in code (replace tube by cone for beamline)" << endl;
 		      gSystem->Exit(1);
 		    }
-		  // cout << "magname: " << magname << endl;
-		  // cout << "x: " << x << endl;
-		  // cout << "y: " << y << endl;
-		  // cout << "z: " << z << endl;
-		  // cout << "inner_radius_zin: " << inner_radius_zin << endl;
-		  // cout << "inner_radius_zout: " << inner_radius_zout << endl;
-		  // cout << "outer_magnet_diameter: " << outer_magnet_diameter << endl;
-		  // cout << "length: " << length << endl;
-		  // cout << "angle: " << angle << endl;
-		  // cout << "dipole_field_x: " << dipole_field_x << endl;
-		  // cout << "fieldgradient: " << fieldgradient << endl;
+		  if(verbose){
+		    cout << endl << endl << "\tID number "<<imagnet<<endl;
+		    cout << "magname: " << magname << endl;
+		    cout << "x: " << x << endl;
+		    cout << "y: " << y << endl;
+		    cout << "z: " << z << endl;
+		    cout << "inner_radius_zin: " << inner_radius_zin << endl;
+		    cout << "inner_radius_zout: " << inner_radius_zout << endl;
+		    cout << "outer_magnet_diameter: " << outer_magnet_diameter << endl;
+		    cout << "length: " << length << endl;
+		    cout << "angle: " << angle << endl;
+		    cout << "dipole_field_x: " << dipole_field_x << endl;
+		    cout << "fieldgradient: " << fieldgradient << endl;
+		  }
 		  if (! magname.compare(0,1,"D"))
 		    {
 		      magtype = "DIPOLE";
@@ -148,6 +151,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 		  inner_radius_zin *= 100.;
 		  outer_magnet_diameter *= 100.;
 		  angle = (angle/TMath::Pi()*360.)/1000.; // given in mrad
+
 		  if (magnetlist.empty() || magnetlist.find(imagnet) != magnetlist.end())
 		    {
 		      bl = new BeamLineMagnetSubsystem("BEAMLINEMAGNET",imagnet);
@@ -192,7 +196,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
       infile.close();
       if (biggest_z*2. > g4Reco->GetWorldSizeZ())
 	{
-	  g4Reco->SetWorldSizeZ(biggest_z+100.); // leave 1m on both sides
+	  g4Reco->SetWorldSizeZ((biggest_z+100.)*2); // leave 1m on both sides
 	}
     }
 
@@ -204,11 +208,14 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   dipoleExitDet->set_double_param("size_x",100);
   dipoleExitDet->set_double_param("size_y",100);
   dipoleExitDet->set_double_param("size_z",0.1);
-  dipoleExitDet->SetActive();
+  dipoleExitDet->SetActive(1);
   dipoleExitDet->set_string_param("material","G4_Galactic");
   g4Reco->registerSubsystem(dipoleExitDet);
   //FIXME do i need to set a maximum width for the world here?!
   //FIXME why is vis.mac axis not drawn?
+
+  if(verbose)
+    cout<<"World size: "<<g4Reco->GetWorldSizeX()<<" "<<g4Reco->GetWorldSizeY()<<" "<<g4Reco->GetWorldSizeZ()<<" "<<endl;
 
   se->registerSubsystem(g4Reco);
 
