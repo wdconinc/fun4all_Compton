@@ -65,6 +65,8 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   //   so we do not need the geometry
   g4Reco->save_DST_geometry(false);
   g4Reco->set_field(0);
+  g4Reco->SetWorldMaterial("G4_Galactic");
+
   BeamLineMagnetSubsystem *bl = nullptr;
   int imagnet=0;
   std::ifstream infile("ip12_magnet.dat");
@@ -160,8 +162,8 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 		      bl->set_double_param("rot_y",angle);
 		      bl->set_double_param("inner_radius",inner_radius_zin);
 		      bl->set_double_param("outer_radius", outer_magnet_diameter/2.);
-		      //bl->SetActive();
-		      bl->BlackHole();
+		      bl->SetActive(0);
+		      //bl->BlackHole();
 		      if (absorberactive)  
 			{
 			  bl->SetAbsorberActive();
