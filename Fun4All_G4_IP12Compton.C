@@ -5,7 +5,7 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDummyInputManager.h>
-#include <g4detectors/PHG4CylinderSubsystem.h>
+#include <g4detectors/PHG4BlockSubsystem.h>
 #include <g4histos/G4HitNtuple.h>
 #include <g4main/PHG4ParticleGun.h>
 #include <g4main/PHG4Reco.h>
@@ -32,7 +32,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   recoConsts *rc = recoConsts::instance();
 
   // this adds a particle gun in front of every magnet which shoots charged geantinos into them
-  bool add_pgun = true;
+  bool add_pgun = false;
 
   // make magnet active volume if you want to study the hits
   bool magnet_active=false;
@@ -69,7 +69,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 
   BeamLineMagnetSubsystem *bl = nullptr;
   int imagnet=0;
-  std::ifstream infile("ip12_magnet.dat");
+  std::ifstream infile("ip12_magnetV2.dat");
   if (infile.is_open())
     {
       double biggest_z = 0.;
@@ -162,7 +162,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 		      bl->set_double_param("rot_y",angle);
 		      bl->set_double_param("inner_radius",inner_radius_zin);
 		      bl->set_double_param("outer_radius", outer_magnet_diameter/2.);
-		      bl->SetActive(0);
+		      bl->SetActive(magnet_active);
 		      //bl->BlackHole();
 		      if (absorberactive)  
 			{
@@ -197,14 +197,15 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
     }
 
   //Simple flat detector
-  auto *dipoleExitDet = new PHG4CylinderSubsystem("dExit",0);
-  dipoleExitDet->set_double_param("radius", 0.0);//cm
-  dipoleExitDet->set_double_param("thickness",200.0);
-  dipoleExitDet->set_double_param("length",0.1);//FIXME why doesn't this work
+  auto *dipoleExitDet = new PHG4BlockSubsystem("dExit");
   dipoleExitDet->set_double_param("place_x",20);
   dipoleExitDet->set_double_param("place_y",0);
-  dipoleExitDet->set_double_param("place_z",1000);//FIXME why doesn't this work
+  dipoleExitDet->set_double_param("place_z",-1000);
+  dipoleExitDet->set_double_param("size_x",100);
+  dipoleExitDet->set_double_param("size_y",100);
+  dipoleExitDet->set_double_param("size_z",0.1);
   dipoleExitDet->SetActive();
+  dipoleExitDet->set_string_param("material","G4_Galactic");
   g4Reco->registerSubsystem(dipoleExitDet);
   //FIXME do i need to set a maximum width for the world here?!
   //FIXME why is vis.mac axis not drawn?
