@@ -12,11 +12,12 @@
 #include <phool/recoConsts.h>
 #include <g4detectors/BeamLineMagnetSubsystem.h>
 #include <g4main/PHG4Reco.h>
-#endif
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4detectors.so)
 R__LOAD_LIBRARY(libg4histos.so)
+
+#endif
 
 #include <set>
 
@@ -52,7 +53,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   PHG4ParticleGun *gun = new PHG4ParticleGun();
   gun->set_name("chargedgeantino");
   gun->set_vtx(20, 0, -950); //cm
-  gun->set_mom(0, 0, -1);
+  gun->set_mom(0, 0, -10);
   // gun->AddParticle("chargedgeantino",0,2,pz);
   // gun->AddParticle("chargedgeantino",0,3,pz);
   se->registerSubsystem(gun);
@@ -219,7 +220,7 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 
   se->registerSubsystem(g4Reco);
 
-  G4HitNtuple *hits = new G4HitNtuple("hits");
+  G4HitNtuple *hits = new G4HitNtuple("hits","o_tst.root");
   hits->AddNode("dExit",0);
   se->registerSubsystem(hits);
 
