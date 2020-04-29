@@ -30,7 +30,7 @@ R__LOAD_LIBRARY(libg4histos.so)
 
 void Fun4All_G4_IP12Compton(
 			    int nEvents = -1, 
-			    const std::string finNm="../comptonRad/tst.root", 
+			    const std::string finNm="./milouIn.root", 
 			    const std::string foutNm="o_tst")
 {
   gSystem->Load("libg4detectors.so");
@@ -44,7 +44,7 @@ void Fun4All_G4_IP12Compton(
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
-  if(nEvents>0){
+  if(nEvents>1){
     ReadEICFiles *eicfile = new ReadEICFiles();
     //ReadEICFilesCompton *eicfile = new ReadEICFilesCompton();
     eicfile->OpenInputFile(finNm);
@@ -56,7 +56,7 @@ void Fun4All_G4_IP12Compton(
     PHG4ParticleGun *gun = new PHG4ParticleGun();
     gun->set_name("chargedgeantino");
     gun->set_vtx(0, 0, 0);
-    gun->set_mom(0, 0, 10);
+    gun->set_mom(0, 0, 18);
     se->registerSubsystem(gun);
   }
 
@@ -246,7 +246,7 @@ void Fun4All_G4_IP12Compton(
     ana->set_load_all_particle(false);
     ana->set_load_active_particle(true);
     ana->set_save_vertex(true);
-    if (nEvents > 0 && nEvents < 2){
+    if (nEvents > 0 && nEvents < 10){
       ana->Verbosity(2);
     }
     ana->AddNode("dExit_0");
