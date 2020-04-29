@@ -31,8 +31,10 @@
 /vis/ogl/set/displayListLimit 500000
 # our world is 4x4 meters, the detector is about 1m across
 # zooming by 4 makes it fill the display
-#/vis/viewer/zoom 1.2
-/vis/scene/add/axes 0 0 0 100 cm
+/vis/viewer/set/viewpointThetaPhi 65 180 deg
+/vis/viewer/pan 10 0 m
+/vis/viewer/zoom 10.5
+/vis/scene/add/axes 0 0 -10 1 m
 #
 # Use this open statement instead to get a HepRep version 1 file
 # suitable for viewing in WIRED.
