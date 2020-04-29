@@ -11,7 +11,8 @@
 #include <g4eval/PHG4DSTReader.h>
 #include <g4main/PHG4ParticleGun.h>
 #include <g4main/HepMCNodeReader.h>
-#include <g4main/ReadEICFiles.h>
+//#include <g4main/ReadEICFiles.h>
+#include <fun4all_compton/ReadEICFilesCompton.h>
 #include <g4main/PHG4Reco.h>
 #include <g4main/PHG4TruthSubsystem.h>
 #include <g4detectors/BeamLineMagnetSubsystem.h>
@@ -44,7 +45,7 @@ void Fun4All_G4_IP12Compton(
   recoConsts *rc = recoConsts::instance();
 
   if(nEvents>0){
-    ReadEICFiles *eicfile = new ReadEICFiles();
+    ReadEICFilesCompton *eicfile = new ReadEICFilesCompton();
     eicfile->OpenInputFile(finNm);
     se->registerSubsystem(eicfile);
     
@@ -60,9 +61,6 @@ void Fun4All_G4_IP12Compton(
 
   bool verbose = false;
 
-  // this adds a particle gun in front of every magnet which shoots charged geantinos into them
-  //bool add_pgun = false;
-
   // make magnet active volume if you want to study the hits
   bool magnet_active=false;
   int absorberactive = 1;
@@ -71,12 +69,6 @@ void Fun4All_G4_IP12Compton(
   set<int> magnetlist;
   //  magnetlist.insert(1);
   //  magnetlist.insert(3);
-
-  // Not needed with compton events
-  // // ParticleGun shoots straight into the magnets, if you want an angle, set this here
-  // double px = 0.;
-  // double py = 0.;
-  // double pz = 1.;
 
   //
   // Geant4 setup
@@ -196,15 +188,6 @@ void Fun4All_G4_IP12Compton(
 		      bl->OverlapCheck(overlapcheck);
 		      bl->SuperDetector("BEAMLINEMAGNET");
 		      g4Reco->registerSubsystem(bl);
-		      // if (add_pgun)
-		      // 	{
-		      // 	  PHG4ParticleGun *gun = new PHG4ParticleGun();
-		      // 	  //   gun->set_name("pi-");
-		      // 	  gun->set_name("chargedgeantino");
-		      // 	  gun->set_vtx(x, y, z-length/2.-0.1); 
-		      // 	  gun->set_mom(px, py, pz);
-		      // 	  se->registerSubsystem(gun);
-		      // 	}
 		    }
 		  imagnet++;
 		  if (fabs(z)+length > biggest_z)
@@ -249,11 +232,6 @@ void Fun4All_G4_IP12Compton(
 
   se->registerSubsystem(g4Reco);
 
-  // G4HitNtuple *hits = new G4HitNtuple("hits","o_tst.root");
-  // hits->AddNode("dExit",0);
-  // hits->AddNode("gen",1);
-  // se->registerSubsystem(hits);
-
   PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
   g4Reco->registerSubsystem(truth);
 
@@ -270,8 +248,8 @@ void Fun4All_G4_IP12Compton(
     if (nEvents > 0 && nEvents < 2){
       ana->Verbosity(2);
     }
-    ana->AddNode("dExit");
-    ana->AddNode("gen");
+    ana->AddNode("dExit_0");
+    ana->AddNode("gen_0");
     se->registerSubsystem(ana);
   }
 
@@ -279,7 +257,6 @@ void Fun4All_G4_IP12Compton(
   Fun4AllInputManager *in = new Fun4AllDummyInputManager( "Dummy");
   se->registerInputManager( in );
 
-  // events = 0 => run forever, default is -1, do not run event loop
   if (nEvents <= 0)
     {
       return 0;
