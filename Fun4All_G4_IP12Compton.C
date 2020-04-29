@@ -11,8 +11,8 @@
 #include <g4eval/PHG4DSTReader.h>
 #include <g4main/PHG4ParticleGun.h>
 #include <g4main/HepMCNodeReader.h>
-//#include <g4main/ReadEICFiles.h>
-#include <fun4all_compton/ReadEICFilesCompton.h>
+#include <g4main/ReadEICFiles.h>
+//#include <fun4all_compton/ReadEICFilesCompton.h>
 #include <g4main/PHG4Reco.h>
 #include <g4main/PHG4TruthSubsystem.h>
 #include <g4detectors/BeamLineMagnetSubsystem.h>
@@ -45,7 +45,8 @@ void Fun4All_G4_IP12Compton(
   recoConsts *rc = recoConsts::instance();
 
   if(nEvents>0){
-    ReadEICFilesCompton *eicfile = new ReadEICFilesCompton();
+    ReadEICFiles *eicfile = new ReadEICFiles();
+    //ReadEICFilesCompton *eicfile = new ReadEICFilesCompton();
     eicfile->OpenInputFile(finNm);
     se->registerSubsystem(eicfile);
     
