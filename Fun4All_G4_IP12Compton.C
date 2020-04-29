@@ -5,15 +5,21 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDummyInputManager.h>
-#include <g4detectors/PHG4BlockSubsystem.h>
+#include <fun4all/Fun4AllDstOutputManager.h>
+#include <fun4all/Fun4AllOutputManager.h>
 #include <g4histos/G4HitNtuple.h>
+#include <g4eval/PHG4DSTReader.h>
 #include <g4main/PHG4ParticleGun.h>
+#include <g4main/HepMCNodeReader.h>
+#include <g4main/ReadEICFiles.h>
 #include <g4main/PHG4Reco.h>
-#include <phool/recoConsts.h>
+#include <g4main/PHG4TruthSubsystem.h>
 #include <g4detectors/BeamLineMagnetSubsystem.h>
-#include <g4main/PHG4Reco.h>
+#include <g4detectors/PHG4BlockSubsystem.h>
+#include <phool/recoConsts.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libg4eval.so)
 R__LOAD_LIBRARY(libg4detectors.so)
 R__LOAD_LIBRARY(libg4histos.so)
 
@@ -21,10 +27,15 @@ R__LOAD_LIBRARY(libg4histos.so)
 
 #include <set>
 
-void Fun4All_G4_IP12Compton(int nEvents = -1)
+void Fun4All_G4_IP12Compton(
+			    int nEvents = -1, 
+			    const std::string finNm="../comptonRad/tst.root", 
+			    const std::string foutNm="o_tst")
 {
   gSystem->Load("libg4detectors.so");
-  gSystem->Load("libg4testbench.so");
+  gSystem->Load("libg4testbench.so");  
+  gSystem->Load("libg4histos");
+  gSystem->Load("libg4eval");
 
   ///////////////////////////////////////////
   // Make the Server
@@ -32,10 +43,25 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
+  if(nEvents>0){
+    ReadEICFiles *eicfile = new ReadEICFiles();
+    eicfile->OpenInputFile(finNm);
+    se->registerSubsystem(eicfile);
+    
+    HepMCNodeReader *hr = new HepMCNodeReader();
+    se->registerSubsystem(hr);
+  }else{
+    PHG4ParticleGun *gun = new PHG4ParticleGun();
+    gun->set_name("chargedgeantino");
+    gun->set_vtx(0, 0, 0);
+    gun->set_mom(0, 0, 10);
+    se->registerSubsystem(gun);
+  }
+
   bool verbose = false;
 
   // this adds a particle gun in front of every magnet which shoots charged geantinos into them
-  bool add_pgun = false;
+  //bool add_pgun = false;
 
   // make magnet active volume if you want to study the hits
   bool magnet_active=false;
@@ -46,17 +72,11 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
   //  magnetlist.insert(1);
   //  magnetlist.insert(3);
 
-  // ParticleGun shoots straight into the magnets, if you want an angle, set this here
-  double px = 0.;
-  double py = 0.;
-  double pz = 1.;
-  PHG4ParticleGun *gun = new PHG4ParticleGun();
-  gun->set_name("chargedgeantino");
-  gun->set_vtx(20, 0, -950); //cm
-  gun->set_mom(0, 0, -10);
-  // gun->AddParticle("chargedgeantino",0,2,pz);
-  // gun->AddParticle("chargedgeantino",0,3,pz);
-  se->registerSubsystem(gun);
+  // Not needed with compton events
+  // // ParticleGun shoots straight into the magnets, if you want an angle, set this here
+  // double px = 0.;
+  // double py = 0.;
+  // double pz = 1.;
 
   //
   // Geant4 setup
@@ -176,15 +196,15 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 		      bl->OverlapCheck(overlapcheck);
 		      bl->SuperDetector("BEAMLINEMAGNET");
 		      g4Reco->registerSubsystem(bl);
-		      if (add_pgun)
-			{
-			  PHG4ParticleGun *gun = new PHG4ParticleGun();
-			  //   gun->set_name("pi-");
-			  gun->set_name("chargedgeantino");
-			  gun->set_vtx(x, y, z-length/2.-0.1); 
-			  gun->set_mom(px, py, pz);
-			  se->registerSubsystem(gun);
-			}
+		      // if (add_pgun)
+		      // 	{
+		      // 	  PHG4ParticleGun *gun = new PHG4ParticleGun();
+		      // 	  //   gun->set_name("pi-");
+		      // 	  gun->set_name("chargedgeantino");
+		      // 	  gun->set_vtx(x, y, z-length/2.-0.1); 
+		      // 	  gun->set_mom(px, py, pz);
+		      // 	  se->registerSubsystem(gun);
+		      // 	}
 		    }
 		  imagnet++;
 		  if (fabs(z)+length > biggest_z)
@@ -203,26 +223,57 @@ void Fun4All_G4_IP12Compton(int nEvents = -1)
 
   //Simple flat detector
   auto *dipoleExitDet = new PHG4BlockSubsystem("dExit");
-  dipoleExitDet->set_double_param("place_x",20);
+  dipoleExitDet->set_double_param("place_x",0);
   dipoleExitDet->set_double_param("place_y",0);
-  dipoleExitDet->set_double_param("place_z",-1000);
+  dipoleExitDet->set_double_param("place_z",500);
   dipoleExitDet->set_double_param("size_x",100);
   dipoleExitDet->set_double_param("size_y",100);
   dipoleExitDet->set_double_param("size_z",0.1);
-  dipoleExitDet->SetActive(1);
   dipoleExitDet->set_string_param("material","G4_Galactic");
+  dipoleExitDet->SetActive();
   g4Reco->registerSubsystem(dipoleExitDet);
-  //FIXME do i need to set a maximum width for the world here?!
-  //FIXME why is vis.mac axis not drawn?
+
+  auto *genDet = new PHG4BlockSubsystem("gen");
+  genDet->set_double_param("place_x",0);
+  genDet->set_double_param("place_y",0);
+  genDet->set_double_param("place_z",5);
+  genDet->set_double_param("size_x",100);
+  genDet->set_double_param("size_y",100);
+  genDet->set_double_param("size_z",0.1);
+  genDet->SetActive();
+  genDet->set_string_param("material","G4_Galactic");
+  g4Reco->registerSubsystem(genDet);
 
   if(verbose)
     cout<<"World size: "<<g4Reco->GetWorldSizeX()<<" "<<g4Reco->GetWorldSizeY()<<" "<<g4Reco->GetWorldSizeZ()<<" "<<endl;
 
   se->registerSubsystem(g4Reco);
 
-  G4HitNtuple *hits = new G4HitNtuple("hits","o_tst.root");
-  hits->AddNode("dExit",0);
-  se->registerSubsystem(hits);
+  // G4HitNtuple *hits = new G4HitNtuple("hits","o_tst.root");
+  // hits->AddNode("dExit",0);
+  // hits->AddNode("gen",1);
+  // se->registerSubsystem(hits);
+
+  PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
+  g4Reco->registerSubsystem(truth);
+
+  if (nEvents>0){
+    Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",foutNm.c_str());
+    se->registerOutputManager(out);
+
+    // save a comprehensive  evaluation file
+    PHG4DSTReader* ana = new PHG4DSTReader(Form("%s_DSTReader.root",foutNm.c_str()));
+    ana->set_save_particle(true);
+    ana->set_load_all_particle(false);
+    ana->set_load_active_particle(true);
+    ana->set_save_vertex(true);
+    if (nEvents > 0 && nEvents < 2){
+      ana->Verbosity(2);
+    }
+    ana->AddNode("dExit");
+    ana->AddNode("gen");
+    se->registerSubsystem(ana);
+  }
 
   // this (dummy) input manager just drives the event loop
   Fun4AllInputManager *in = new Fun4AllDummyInputManager( "Dummy");
