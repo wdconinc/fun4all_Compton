@@ -30,7 +30,7 @@ R__LOAD_LIBRARY(libg4histos.so)
 
 void Fun4All_G4_IP12Compton(
 			    int nEvents = -1, 
-			    const std::string finNm="./milouIn.root", 
+			    const std::string finNm="./comptonRad/tst.root", 
 			    const std::string foutNm="o_tst")
 {
   gSystem->Load("libg4detectors.so");
@@ -42,15 +42,17 @@ void Fun4All_G4_IP12Compton(
   // Make the Server
   //////////////////////////////////////////
   Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(2);
   recoConsts *rc = recoConsts::instance();
 
-  if(nEvents>1){
+  if(nEvents>0){
     ReadEICFiles *eicfile = new ReadEICFiles();
     //ReadEICFilesCompton *eicfile = new ReadEICFilesCompton();
     eicfile->OpenInputFile(finNm);
     se->registerSubsystem(eicfile);
     
     HepMCNodeReader *hr = new HepMCNodeReader();
+    hr->Verbosity(2);
     se->registerSubsystem(hr);
   }else{
     PHG4ParticleGun *gun = new PHG4ParticleGun();
@@ -231,10 +233,10 @@ void Fun4All_G4_IP12Compton(
   if(verbose)
     cout<<"World size: "<<g4Reco->GetWorldSizeX()<<" "<<g4Reco->GetWorldSizeY()<<" "<<g4Reco->GetWorldSizeZ()<<" "<<endl;
 
-  se->registerSubsystem(g4Reco);
-
   PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
   g4Reco->registerSubsystem(truth);
+
+  se->registerSubsystem(g4Reco);
 
   if (nEvents>0){
     Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",foutNm.c_str());
