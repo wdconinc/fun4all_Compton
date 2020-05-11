@@ -30,7 +30,8 @@ R__LOAD_LIBRARY(libg4histos.so)
 
 void Fun4All_G4_IP12Compton(
 			    int nEvents = -1, 
-			    const std::string finNm="./comptonRad/tst.root", 
+			    bool testGun = false,
+			    const std::string finNm="./milouIn.root", 
 			    const std::string foutNm="o_tst")
 {
   gSystem->Load("libg4detectors.so");
@@ -42,31 +43,33 @@ void Fun4All_G4_IP12Compton(
   // Make the Server
   //////////////////////////////////////////
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(2);
+  if(nEvents<5)
+    se->Verbosity(2);
   recoConsts *rc = recoConsts::instance();
 
-  if(nEvents>0){
+  if(!testGun){
     ReadEICFiles *eicfile = new ReadEICFiles();
-    //ReadEICFilesCompton *eicfile = new ReadEICFilesCompton();
     eicfile->OpenInputFile(finNm);
     se->registerSubsystem(eicfile);
     
     HepMCNodeReader *hr = new HepMCNodeReader();
-    hr->Verbosity(2);
+    if(nEvents<5)
+      hr->Verbosity(2);
     se->registerSubsystem(hr);
   }else{
     PHG4ParticleGun *gun = new PHG4ParticleGun();
     gun->set_name("chargedgeantino");
+    TVector3 gMom(0,0,-18);
+    gMom.RotateY(0.0192);
     gun->set_vtx(0, 0, 0);
-    gun->set_mom(0, 0, 18);
+    gun->set_mom(gMom.X(), gMom.Y(), gMom.Z());
     se->registerSubsystem(gun);
   }
-
   bool verbose = false;
 
   // make magnet active volume if you want to study the hits
   bool magnet_active=false;
-  int absorberactive = 1;
+  int absorberactive = 0;
 
   // if you insert numbers it only displays those magnets, do not comment out the set declaration
   set<int> magnetlist;
@@ -171,8 +174,9 @@ void Fun4All_G4_IP12Compton(
 		  if (magnetlist.empty() || magnetlist.find(imagnet) != magnetlist.end())
 		    {
 		      bl = new BeamLineMagnetSubsystem("BEAMLINEMAGNET",imagnet);
-		      bl->set_double_param("field_x",dipole_field_x);
-		      bl->set_double_param("field_y",0.);
+		      bl->set_double_param("field_y",dipole_field_x);
+		      //bl->set_double_param("field_x",dipole_field_x);
+		      bl->set_double_param("field_x",0.);
 		      bl->set_double_param("fieldgradient",fieldgradient);
 		      bl->set_string_param("magtype",magtype);
 		      bl->set_double_param("length",length);
@@ -211,7 +215,7 @@ void Fun4All_G4_IP12Compton(
   auto *dipoleExitDet = new PHG4BlockSubsystem("dExit");
   dipoleExitDet->set_double_param("place_x",0);
   dipoleExitDet->set_double_param("place_y",0);
-  dipoleExitDet->set_double_param("place_z",500);
+  dipoleExitDet->set_double_param("place_z",-500);
   dipoleExitDet->set_double_param("size_x",100);
   dipoleExitDet->set_double_param("size_y",100);
   dipoleExitDet->set_double_param("size_z",0.1);
@@ -222,7 +226,7 @@ void Fun4All_G4_IP12Compton(
   auto *genDet = new PHG4BlockSubsystem("gen");
   genDet->set_double_param("place_x",0);
   genDet->set_double_param("place_y",0);
-  genDet->set_double_param("place_z",5);
+  genDet->set_double_param("place_z",-5);
   genDet->set_double_param("size_x",100);
   genDet->set_double_param("size_y",100);
   genDet->set_double_param("size_z",0.1);
@@ -239,7 +243,7 @@ void Fun4All_G4_IP12Compton(
   se->registerSubsystem(g4Reco);
 
   if (nEvents>0){
-    Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",foutNm.c_str());
+    Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",foutNm+string("_DSTOUT.root"));
     se->registerOutputManager(out);
 
     // save a comprehensive  evaluation file
