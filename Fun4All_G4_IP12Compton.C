@@ -12,17 +12,20 @@
 #include <g4main/PHG4ParticleGun.h>
 #include <g4main/HepMCNodeReader.h>
 #include <g4main/ReadEICFiles.h>
-//#include <fun4all_compton/ReadEICFilesCompton.h>
 #include <g4main/PHG4Reco.h>
 #include <g4main/PHG4TruthSubsystem.h>
 #include <g4detectors/BeamLineMagnetSubsystem.h>
 #include <g4detectors/PHG4BlockSubsystem.h>
 #include <phool/recoConsts.h>
 
+#include <fun4all_compton/ComptonTruthSubsystem.h>
+#include <fun4all_compton/ComptonIO.h>
+
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4eval.so)
 R__LOAD_LIBRARY(libg4detectors.so)
 R__LOAD_LIBRARY(libg4histos.so)
+R__LOAD_LIBRARY(libCompton.so)
 
 #endif
 
@@ -38,6 +41,7 @@ void Fun4All_G4_IP12Compton(
   gSystem->Load("libg4testbench.so");  
   gSystem->Load("libg4histos");
   gSystem->Load("libg4eval");
+  gSystem->Load("libCompton.so");
 
   ///////////////////////////////////////////
   // Make the Server
@@ -80,6 +84,9 @@ void Fun4All_G4_IP12Compton(
   // Geant4 setup
   //
   PHG4Reco* g4Reco = new PHG4Reco();
+  // if(nEvents<5)
+  //   g4Reco->Verbosity(2);
+
   // setup of G4: 
   //   no saving of geometry: it takes time and we do not do tracking
   //   so we do not need the geometry
@@ -234,6 +241,19 @@ void Fun4All_G4_IP12Compton(
   genDet->set_string_param("material","G4_Galactic");
   g4Reco->registerSubsystem(genDet);
 
+  ComptonTruthSubsystem *genDet2 = new ComptonTruthSubsystem("gen2");
+  genDet2->set_double_param("place_x",0);
+  genDet2->set_double_param("place_y",0);
+  genDet2->set_double_param("place_z",-6);
+  genDet2->set_double_param("size_x",100);
+  genDet2->set_double_param("size_y",100);
+  genDet2->set_double_param("size_z",0.1);
+  genDet2->SetActive();
+  genDet2->Verbosity(4);
+  genDet2->SetTrackingLevel(1);//primaries only
+  genDet2->set_string_param("material","G4_Galactic");
+  g4Reco->registerSubsystem(genDet2);
+
   if(verbose)
     cout<<"World size: "<<g4Reco->GetWorldSizeX()<<" "<<g4Reco->GetWorldSizeY()<<" "<<g4Reco->GetWorldSizeZ()<<" "<<endl;
 
@@ -241,6 +261,12 @@ void Fun4All_G4_IP12Compton(
   g4Reco->registerSubsystem(truth);
 
   se->registerSubsystem(g4Reco);
+
+  ComptonIO *cmtOut = new ComptonIO();
+  cmtOut->Verbosity(4);
+  cmtOut->AddNode("gen2",0,0);
+  se->registerSubsystem(cmtOut);
+
 
   if (nEvents>0){
     Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",foutNm+string("_DSTOUT.root"));
@@ -258,6 +284,7 @@ void Fun4All_G4_IP12Compton(
     ana->AddNode("dExit_0");
     ana->AddNode("gen_0");
     se->registerSubsystem(ana);
+
   }
 
   // this (dummy) input manager just drives the event loop

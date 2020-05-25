@@ -11,20 +11,27 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  asdSubsystem.h
+  ComptonTruthSubsystem.h \
+  ComptonIO.h
 
 lib_LTLIBRARIES = \
-  libasd.la
+  libCompton.la
 
-libasd_la_SOURCES = \
-  EicEventHeader.cc\
-  ReadEICFilesCompton.cc
+libCompton_la_SOURCES = \
+  ComptonTruthSubsystem.cc\
+  ComptonTruthSteppingAction.cc\
+  ComptonTruthDetector.cc \
+  ComptonIO.cc
 
-libasd_la_LIBADD = \
+libCompton_la_LIBADD = \
   -lphool \
   -lSubsysReco\
   -lg4detectors\
   -lg4testbench 
+
+# Rule for generating table CINT dictionaries.
+%_Dict.cc: %.h %LinkDef.h
+	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
 
 BUILT_SOURCES = testexternals.cc
 
@@ -32,7 +39,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libasd.la
+testexternals_LDADD   = libCompton.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
