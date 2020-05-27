@@ -296,7 +296,6 @@ bool ComptonTruthSteppingAction::UserSteppingAction(const G4Step *aStep,bool was
     cout<<"\ttrack ID "<<aTrack->GetTrackID()<<endl;
     cout << "\tcurrent phys pre vol: " << m_SaveVolPre->GetName()
 	 << " current phys post vol: " << m_SaveVolPost->GetName() << endl;
-    std::cin.ignore();
   }
 
 
