@@ -16,7 +16,7 @@ class TTree;
 struct comptonTruth_t{
   int fDetNr;
   double fE,fX,fY,fZ,fpX,fpY,fpZ,fTime;
-  double fPDGid,fTrackID,fParentID;
+  int fPDGid,fTrackID,fParentID;
 };
 
 class ComptonIO : public SubsysReco
@@ -44,9 +44,16 @@ class ComptonIO : public SubsysReco
   std::set<std::string> _node_postfix;
   std::map<std::string, int> _detid;
   std::map<std::string, int> oDetid;
-  std::vector<comptonTruth_t> fTruthHit;
+
+  int evNr;
   TTree *t;
   TFile *outfile;
+
+  void resetValues();
+  int fDetNr;
+  double fE,fX,fY,fZ,fpX,fpY,fpZ,fTime;
+  int fPDGid,fTrackID,fParentID;
+
 };
 
 #endif

@@ -29,10 +29,6 @@ libCompton_la_LIBADD = \
   -lg4detectors\
   -lg4testbench 
 
-# Rule for generating table CINT dictionaries.
-%_Dict.cc: %.h %LinkDef.h
-	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
-
 BUILT_SOURCES = testexternals.cc
 
 noinst_PROGRAMS = \
