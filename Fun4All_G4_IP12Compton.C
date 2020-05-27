@@ -34,8 +34,8 @@ R__LOAD_LIBRARY(libCompton.so)
 void Fun4All_G4_IP12Compton(
 			    int nEvents = -1, 
 			    bool testGun = false,
-			    const std::string finNm="./milouIn.root", 
-			    const std::string foutNm="o_tst")
+			    const std::string finNm="./e18GeV_g532nm_5e4.root", 
+			    const std::string foutNm="o_ComptonTst.root")
 {
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4testbench.so");  
@@ -47,7 +47,7 @@ void Fun4All_G4_IP12Compton(
   // Make the Server
   //////////////////////////////////////////
   Fun4AllServer *se = Fun4AllServer::instance();
-  if(nEvents<5)
+  if(nEvents<5 && nEvents>0)
     se->Verbosity(2);
   recoConsts *rc = recoConsts::instance();
 
@@ -57,16 +57,25 @@ void Fun4All_G4_IP12Compton(
     se->registerSubsystem(eicfile);
     
     HepMCNodeReader *hr = new HepMCNodeReader();
-    if(nEvents<5)
+    if(nEvents<5 && nEvents>0)
       hr->Verbosity(2);
     se->registerSubsystem(hr);
   }else{
     PHG4ParticleGun *gun = new PHG4ParticleGun();
-    gun->set_name("chargedgeantino");
-    TVector3 gMom(0,0,-18);
-    gMom.RotateY(0.0192);
+    gun->set_pid(11);
+    //gun->set_name("chargedgeantino");//positive charge!!
+    TVector3 gMom(-0.252569,2.76806e-05,-13.147);
+    // gun->set_name("geantino");
+    // TVector3 gMom(-0.09301,-2.76806e-05,-4.84968);
+
+    // //rotation test
+    // TVector3 gMom(0,0,-18);
+    // gMom.RotateY(0.0192);
+
     gun->set_vtx(0, 0, 0);
     gun->set_mom(gMom.X(), gMom.Y(), gMom.Z());
+    if(nEvents<5)
+      cout<<"Momentum "<<gMom.X()<<" "<<gMom.Y()<<" "<<gMom.Z()<<endl;
     se->registerSubsystem(gun);
   }
   bool verbose = false;
@@ -84,8 +93,8 @@ void Fun4All_G4_IP12Compton(
   // Geant4 setup
   //
   PHG4Reco* g4Reco = new PHG4Reco();
-  // if(nEvents<5)
-  //   g4Reco->Verbosity(2);
+  if(nEvents<5 && verbose && nEvents>0)
+    g4Reco->Verbosity(2);
 
   // setup of G4: 
   //   no saving of geometry: it takes time and we do not do tracking
@@ -138,7 +147,7 @@ void Fun4All_G4_IP12Compton(
 			   << " needs change in code (replace tube by cone for beamline)" << endl;
 		      gSystem->Exit(1);
 		    }
-		  if(verbose){
+		  if(verbose  || (nEvents<5 && nEvents>0)){
 		    cout << endl << endl << "\tID number "<<imagnet<<endl;
 		    cout << "magname: " << magname << endl;
 		    cout << "x: " << x << endl;
@@ -182,7 +191,6 @@ void Fun4All_G4_IP12Compton(
 		    {
 		      bl = new BeamLineMagnetSubsystem("BEAMLINEMAGNET",imagnet);
 		      bl->set_double_param("field_y",dipole_field_x);
-		      //bl->set_double_param("field_x",dipole_field_x);
 		      bl->set_double_param("field_x",0.);
 		      bl->set_double_param("fieldgradient",fieldgradient);
 		      bl->set_string_param("magtype",magtype);
@@ -217,9 +225,26 @@ void Fun4All_G4_IP12Compton(
 	  g4Reco->SetWorldSizeZ((biggest_z+100.)*2); // leave 1m on both sides
 	}
     }
+  g4Reco->SetWorldSizeZ(2600*2); //in cm
 
+  //1=primaries only (trackID 1,2); 0=all particles
+  const int trackingLevel = 1;
   //Simple flat detector
-  auto *dipoleExitDet = new PHG4BlockSubsystem("dExit");
+  auto *genDet = new ComptonTruthSubsystem("gen");
+  genDet->set_double_param("place_x",0);
+  genDet->set_double_param("place_y",0);
+  genDet->set_double_param("place_z",-5);
+  genDet->set_double_param("size_x",100);
+  genDet->set_double_param("size_y",100);
+  genDet->set_double_param("size_z",0.1);
+  genDet->set_string_param("material","G4_Galactic");
+  genDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    genDet->Verbosity(4);
+  genDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(genDet);
+
+  auto *dipoleExitDet = new ComptonTruthSubsystem("dExit");
   dipoleExitDet->set_double_param("place_x",0);
   dipoleExitDet->set_double_param("place_y",0);
   dipoleExitDet->set_double_param("place_z",-500);
@@ -228,63 +253,86 @@ void Fun4All_G4_IP12Compton(
   dipoleExitDet->set_double_param("size_z",0.1);
   dipoleExitDet->set_string_param("material","G4_Galactic");
   dipoleExitDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    dipoleExitDet->Verbosity(4);
+  dipoleExitDet->SetTrackingLevel(trackingLevel);
   g4Reco->registerSubsystem(dipoleExitDet);
 
-  auto *genDet = new PHG4BlockSubsystem("gen");
-  genDet->set_double_param("place_x",0);
-  genDet->set_double_param("place_y",0);
-  genDet->set_double_param("place_z",-5);
-  genDet->set_double_param("size_x",100);
-  genDet->set_double_param("size_y",100);
-  genDet->set_double_param("size_z",0.1);
-  genDet->SetActive();
-  genDet->set_string_param("material","G4_Galactic");
-  g4Reco->registerSubsystem(genDet);
+  auto *q1ExitDet = new ComptonTruthSubsystem("q1Exit");
+  q1ExitDet->set_double_param("place_x",0);
+  q1ExitDet->set_double_param("place_y",0);
+  q1ExitDet->set_double_param("place_z",-650);
+  q1ExitDet->set_double_param("size_x",100);
+  q1ExitDet->set_double_param("size_y",100);
+  q1ExitDet->set_double_param("size_z",0.1);
+  q1ExitDet->set_string_param("material","G4_Galactic");
+  q1ExitDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    q1ExitDet->Verbosity(4);
+  q1ExitDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(q1ExitDet);
 
-  ComptonTruthSubsystem *genDet2 = new ComptonTruthSubsystem("gen2");
-  genDet2->set_double_param("place_x",0);
-  genDet2->set_double_param("place_y",0);
-  genDet2->set_double_param("place_z",-6);
-  genDet2->set_double_param("size_x",100);
-  genDet2->set_double_param("size_y",100);
-  genDet2->set_double_param("size_z",0.1);
-  genDet2->SetActive();
-  genDet2->Verbosity(4);
-  genDet2->SetTrackingLevel(1);//primaries only
-  genDet2->set_string_param("material","G4_Galactic");
-  g4Reco->registerSubsystem(genDet2);
+  auto *q2EntranceDet = new ComptonTruthSubsystem("q2Enter");
+  q2EntranceDet->set_double_param("place_x",0);
+  q2EntranceDet->set_double_param("place_y",0);
+  q2EntranceDet->set_double_param("place_z",-1600);
+  q2EntranceDet->set_double_param("size_x",100);
+  q2EntranceDet->set_double_param("size_y",100);
+  q2EntranceDet->set_double_param("size_z",0.1);
+  q2EntranceDet->set_string_param("material","G4_Galactic");
+  q2EntranceDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    q2EntranceDet->Verbosity(4);
+  q2EntranceDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(q2EntranceDet);
 
-  if(verbose)
+  auto *q2ExitDet = new ComptonTruthSubsystem("q2Exit");
+  q2ExitDet->set_double_param("place_x",0);
+  q2ExitDet->set_double_param("place_y",0);
+  q2ExitDet->set_double_param("place_z",-1670);
+  q2ExitDet->set_double_param("size_x",100);
+  q2ExitDet->set_double_param("size_y",100);
+  q2ExitDet->set_double_param("size_z",0.1);
+  q2ExitDet->set_string_param("material","G4_Galactic");
+  q2ExitDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    q2ExitDet->Verbosity(4);
+  q2ExitDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(q2ExitDet);
+
+  auto *det25m = new ComptonTruthSubsystem("det25m");
+  det25m->set_double_param("place_x",0);
+  det25m->set_double_param("place_y",0);
+  det25m->set_double_param("place_z",-2500);
+  det25m->set_double_param("size_x",100);
+  det25m->set_double_param("size_y",100);
+  det25m->set_double_param("size_z",0.1);
+  det25m->set_string_param("material","G4_Galactic");
+  det25m->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    det25m->Verbosity(4);
+  det25m->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(det25m);
+
+  if(verbose || nEvents<5)
     cout<<"World size: "<<g4Reco->GetWorldSizeX()<<" "<<g4Reco->GetWorldSizeY()<<" "<<g4Reco->GetWorldSizeZ()<<" "<<endl;
-
-  PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
-  g4Reco->registerSubsystem(truth);
 
   se->registerSubsystem(g4Reco);
 
-  ComptonIO *cmtOut = new ComptonIO();
-  cmtOut->Verbosity(4);
-  cmtOut->AddNode("gen2",0,0);
-  se->registerSubsystem(cmtOut);
-
-
   if (nEvents>0){
-    Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",foutNm+string("_DSTOUT.root"));
-    se->registerOutputManager(out);
+    PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
+    g4Reco->registerSubsystem(truth);
 
-    // save a comprehensive  evaluation file
-    PHG4DSTReader* ana = new PHG4DSTReader(Form("%s_DSTReader.root",foutNm.c_str()));
-    ana->set_save_particle(true);
-    ana->set_load_all_particle(false);
-    ana->set_load_active_particle(true);
-    ana->set_save_vertex(true);
-    if (nEvents > 0 && nEvents < 10){
-      ana->Verbosity(2);
-    }
-    ana->AddNode("dExit_0");
-    ana->AddNode("gen_0");
-    se->registerSubsystem(ana);
-
+    ComptonIO *cmtOut = new ComptonIO("ComptonIO",foutNm);
+    if(verbose || (nEvents<5 && nEvents>0))
+      cmtOut->Verbosity(4);
+    cmtOut->AddNode("gen",0,0);
+    cmtOut->AddNode("dExit",0,1);
+    cmtOut->AddNode("q1Exit",0,2);
+    cmtOut->AddNode("q2Enter",0,3);
+    cmtOut->AddNode("q2Exit",0,4);
+    cmtOut->AddNode("det25m",0,10);
+    se->registerSubsystem(cmtOut);
   }
 
   // this (dummy) input manager just drives the event loop
