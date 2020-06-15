@@ -31,12 +31,23 @@ R__LOAD_LIBRARY(libCompton.so)
 
 #include <set>
 
+//bool verbose = true;
+bool verbose = false;
+
 void Fun4All_G4_IP12Compton(
 			    int nEvents = -1, 
-			    bool testGun = false,
-			    const std::string finNm="./e18GeV_g532nm_5e4.root", 
-			    const std::string foutNm="o_ComptonTst.root")
+			    const std::string finNm="./milouIn.root", 
+			    const std::string foutNm="o_ComptonTst.root",
+			    const bool testGun = false,
+			    const int eBeam = 18)
 {
+
+  if(eBeam !=5 && eBeam !=12 && eBeam !=18){
+    cout<<"wrong beam energy! only 5,12,18 supported"<<endl;
+    cout<<"\tyou provided "<<eBeam<<endl;
+    return;
+  }
+
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4testbench.so");  
   gSystem->Load("libg4histos");
@@ -53,6 +64,13 @@ void Fun4All_G4_IP12Compton(
 
   if(!testGun){
     ReadEICFiles *eicfile = new ReadEICFiles();
+    if(nEvents<5 && nEvents>0)
+      eicfile->Verbosity(2);
+
+    eicfile->set_vertex_distribution_mean(0,0,0,0);//cm, ns
+    //eicfile->set_vertex_distribution_width(4.3e-2,3.3e-2,0.9,0);//cm, ns -> electron bunch
+    //eicfile->set_vertex_distribution_width(1e-2,1e-2,0.4,0);//cm, ns -> photon bunch
+    eicfile->set_vertex_distribution_width(0,0,0,0);//cm, ns
     eicfile->OpenInputFile(finNm);
     se->registerSubsystem(eicfile);
     
@@ -64,13 +82,14 @@ void Fun4All_G4_IP12Compton(
     PHG4ParticleGun *gun = new PHG4ParticleGun();
     gun->set_pid(11);
     //gun->set_name("chargedgeantino");//positive charge!!
-    TVector3 gMom(-0.252569,2.76806e-05,-13.147);
-    // gun->set_name("geantino");
-    // TVector3 gMom(-0.09301,-2.76806e-05,-4.84968);
+    //TVector3 gMom(-0.252569,2.76806e-05,-13.147);
+    //gun->set_name("geantino");
+    //TVector3 gMom(-0.09301,-2.76806e-05,-4.84968);
 
     // //rotation test
-    // TVector3 gMom(0,0,-18);
-    // gMom.RotateY(0.0192);
+    TVector3 gMom(0,0,-eBeam);
+    //gMom.RotateY(0.0183897);
+    gMom.RotateY(0.0192);
 
     gun->set_vtx(0, 0, 0);
     gun->set_mom(gMom.X(), gMom.Y(), gMom.Z());
@@ -78,7 +97,6 @@ void Fun4All_G4_IP12Compton(
       cout<<"Momentum "<<gMom.X()<<" "<<gMom.Y()<<" "<<gMom.Z()<<endl;
     se->registerSubsystem(gun);
   }
-  bool verbose = false;
 
   // make magnet active volume if you want to study the hits
   bool magnet_active=false;
@@ -102,6 +120,12 @@ void Fun4All_G4_IP12Compton(
   g4Reco->save_DST_geometry(false);
   g4Reco->set_field(0);
   g4Reco->SetWorldMaterial("G4_Galactic");
+
+  map<int,double> gammaFactor;
+  gammaFactor[5] =98.91782353*0.55;//with fudge factor to get a "straight line"
+  gammaFactor[12]=153.2428333*0.87;
+  gammaFactor[18]=187.6833741*1.05;//with fudge factor to get a "straight line"
+  const double gFactor = gammaFactor[eBeam]/187.6833741;
 
   BeamLineMagnetSubsystem *bl = nullptr;
   std::ifstream infile("ip12_magnetV2.dat");
@@ -187,6 +211,9 @@ void Fun4All_G4_IP12Compton(
 		  outer_magnet_diameter *= 100.;
 		  angle = (angle/TMath::Pi()*360.)/1000.; // given in mrad
 
+		  dipole_field_x *= gFactor;
+		  fieldgradient *= gFactor;//FIXME xcheck if you need this
+
 		  if (magnetlist.empty() || magnetlist.find(imagnet) != magnetlist.end())
 		    {
 		      bl = new BeamLineMagnetSubsystem("BEAMLINEMAGNET",imagnet);
@@ -225,7 +252,7 @@ void Fun4All_G4_IP12Compton(
 	  g4Reco->SetWorldSizeZ((biggest_z+100.)*2); // leave 1m on both sides
 	}
     }
-  g4Reco->SetWorldSizeZ(2600*2); //in cm
+  g4Reco->SetWorldSizeZ(3000*2); //in cm
 
   //1=primaries only (trackID 1,2); 0=all particles
   const int trackingLevel = 1;
@@ -258,47 +285,47 @@ void Fun4All_G4_IP12Compton(
   dipoleExitDet->SetTrackingLevel(trackingLevel);
   g4Reco->registerSubsystem(dipoleExitDet);
 
-  auto *q1ExitDet = new ComptonTruthSubsystem("q1Exit");
-  q1ExitDet->set_double_param("place_x",0);
-  q1ExitDet->set_double_param("place_y",0);
-  q1ExitDet->set_double_param("place_z",-650);
-  q1ExitDet->set_double_param("size_x",100);
-  q1ExitDet->set_double_param("size_y",100);
-  q1ExitDet->set_double_param("size_z",0.1);
-  q1ExitDet->set_string_param("material","G4_Galactic");
-  q1ExitDet->SetActive();
+  auto *qf11ExitDet = new ComptonTruthSubsystem("qf11Exit");
+  qf11ExitDet->set_double_param("place_x",0);
+  qf11ExitDet->set_double_param("place_y",0);
+  qf11ExitDet->set_double_param("place_z",-650);
+  qf11ExitDet->set_double_param("size_x",100);
+  qf11ExitDet->set_double_param("size_y",100);
+  qf11ExitDet->set_double_param("size_z",0.1);
+  qf11ExitDet->set_string_param("material","G4_Galactic");
+  qf11ExitDet->SetActive();
   if(verbose  || (nEvents<5 && nEvents>0))
-    q1ExitDet->Verbosity(4);
-  q1ExitDet->SetTrackingLevel(trackingLevel);
-  g4Reco->registerSubsystem(q1ExitDet);
+    qf11ExitDet->Verbosity(4);
+  qf11ExitDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(qf11ExitDet);
 
-  auto *q2EntranceDet = new ComptonTruthSubsystem("q2Enter");
-  q2EntranceDet->set_double_param("place_x",0);
-  q2EntranceDet->set_double_param("place_y",0);
-  q2EntranceDet->set_double_param("place_z",-1600);
-  q2EntranceDet->set_double_param("size_x",100);
-  q2EntranceDet->set_double_param("size_y",100);
-  q2EntranceDet->set_double_param("size_z",0.1);
-  q2EntranceDet->set_string_param("material","G4_Galactic");
-  q2EntranceDet->SetActive();
+  auto *qd10EntranceDet = new ComptonTruthSubsystem("qd10Enter");
+  qd10EntranceDet->set_double_param("place_x",0);
+  qd10EntranceDet->set_double_param("place_y",0);
+  qd10EntranceDet->set_double_param("place_z",-1600);
+  qd10EntranceDet->set_double_param("size_x",100);
+  qd10EntranceDet->set_double_param("size_y",100);
+  qd10EntranceDet->set_double_param("size_z",0.1);
+  qd10EntranceDet->set_string_param("material","G4_Galactic");
+  qd10EntranceDet->SetActive();
   if(verbose  || (nEvents<5 && nEvents>0))
-    q2EntranceDet->Verbosity(4);
-  q2EntranceDet->SetTrackingLevel(trackingLevel);
-  g4Reco->registerSubsystem(q2EntranceDet);
+    qd10EntranceDet->Verbosity(4);
+  qd10EntranceDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(qd10EntranceDet);
 
-  auto *q2ExitDet = new ComptonTruthSubsystem("q2Exit");
-  q2ExitDet->set_double_param("place_x",0);
-  q2ExitDet->set_double_param("place_y",0);
-  q2ExitDet->set_double_param("place_z",-1670);
-  q2ExitDet->set_double_param("size_x",100);
-  q2ExitDet->set_double_param("size_y",100);
-  q2ExitDet->set_double_param("size_z",0.1);
-  q2ExitDet->set_string_param("material","G4_Galactic");
-  q2ExitDet->SetActive();
+  auto *qd10ExitDet = new ComptonTruthSubsystem("qd10Exit");
+  qd10ExitDet->set_double_param("place_x",0);
+  qd10ExitDet->set_double_param("place_y",0);
+  qd10ExitDet->set_double_param("place_z",-1670);
+  qd10ExitDet->set_double_param("size_x",100);
+  qd10ExitDet->set_double_param("size_y",100);
+  qd10ExitDet->set_double_param("size_z",0.1);
+  qd10ExitDet->set_string_param("material","G4_Galactic");
+  qd10ExitDet->SetActive();
   if(verbose  || (nEvents<5 && nEvents>0))
-    q2ExitDet->Verbosity(4);
-  q2ExitDet->SetTrackingLevel(trackingLevel);
-  g4Reco->registerSubsystem(q2ExitDet);
+    qd10ExitDet->Verbosity(4);
+  qd10ExitDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(qd10ExitDet);
 
   auto *det25m = new ComptonTruthSubsystem("det25m");
   det25m->set_double_param("place_x",0);
@@ -314,6 +341,34 @@ void Fun4All_G4_IP12Compton(
   det25m->SetTrackingLevel(trackingLevel);
   g4Reco->registerSubsystem(det25m);
 
+  auto *qf9EntranceDet = new ComptonTruthSubsystem("qf9Enter");
+  qf9EntranceDet->set_double_param("place_x",0);
+  qf9EntranceDet->set_double_param("place_y",0);
+  qf9EntranceDet->set_double_param("place_z",-2700);
+  qf9EntranceDet->set_double_param("size_x",100);
+  qf9EntranceDet->set_double_param("size_y",100);
+  qf9EntranceDet->set_double_param("size_z",0.1);
+  qf9EntranceDet->set_string_param("material","G4_Galactic");
+  qf9EntranceDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    qf9EntranceDet->Verbosity(4);
+  qf9EntranceDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(qf9EntranceDet);
+
+  auto *qf9ExitDet = new ComptonTruthSubsystem("qf9Exit");
+  qf9ExitDet->set_double_param("place_x",0);
+  qf9ExitDet->set_double_param("place_y",0);
+  qf9ExitDet->set_double_param("place_z",-2765);
+  qf9ExitDet->set_double_param("size_x",100);
+  qf9ExitDet->set_double_param("size_y",100);
+  qf9ExitDet->set_double_param("size_z",0.1);
+  qf9ExitDet->set_string_param("material","G4_Galactic");
+  qf9ExitDet->SetActive();
+  if(verbose  || (nEvents<5 && nEvents>0))
+    qf9ExitDet->Verbosity(4);
+  qf9ExitDet->SetTrackingLevel(trackingLevel);
+  g4Reco->registerSubsystem(qf9ExitDet);
+
   if(verbose || nEvents<5)
     cout<<"World size: "<<g4Reco->GetWorldSizeX()<<" "<<g4Reco->GetWorldSizeY()<<" "<<g4Reco->GetWorldSizeZ()<<" "<<endl;
 
@@ -328,10 +383,12 @@ void Fun4All_G4_IP12Compton(
       cmtOut->Verbosity(4);
     cmtOut->AddNode("gen",0,0);
     cmtOut->AddNode("dExit",0,1);
-    cmtOut->AddNode("q1Exit",0,2);
-    cmtOut->AddNode("q2Enter",0,3);
-    cmtOut->AddNode("q2Exit",0,4);
-    cmtOut->AddNode("det25m",0,10);
+    cmtOut->AddNode("qf11Exit",0,2);
+    cmtOut->AddNode("qd10Enter",0,3);
+    cmtOut->AddNode("qd10Exit",0,4);
+    cmtOut->AddNode("det25m",0,5);
+    cmtOut->AddNode("qf9Enter",0,6);
+    cmtOut->AddNode("qf9Exit",0,7);
     se->registerSubsystem(cmtOut);
   }
 
