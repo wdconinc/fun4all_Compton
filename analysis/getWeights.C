@@ -2,10 +2,13 @@ std::vector<double> wghts[2];
 std::vector<double> epZ;
 void readInputCR(string,int,int);
 
-void getWeights(string fnm, string crIn, int nStart, int nStop){
-
-  readInputCR(crIn,nStart,nStop);
-  cout<<"Finish reading cr: "<<epZ.size()<<". Requested nEvets: "<<nStop-nStart<<endl;
+void getWeights(string fnm, string crIn, int nStart=0, int nStop=5000000){
+  if(epZ.size()==0){
+    readInputCR(crIn,nStart,nStop);
+    cout<<"Finish reading cr: "<<epZ.size()<<". Requested nEvets: "<<nStop-nStart<<endl;
+  }else{
+    cout<<"Skipped readin of cr file .. assume it was the same as before!"<<endl;
+  }
 
   TFile *fin=TFile::Open(fnm.c_str(),"READ");
   TTree *tin = (TTree*)fin->Get("t");
