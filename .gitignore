@@ -45,3 +45,5 @@ ltmain.sh
 install-sh
 depcomp
 G4History.macro
+*.pdf
+z_*
