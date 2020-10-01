@@ -83,16 +83,13 @@ root
 
 If you have a Linux system, you can [install CVMFS](https://cvmfs.readthedocs.io/en/stable/cpt-quickstart.html) and [install Singularity](https://sylabs.io/guides/3.0/user-guide/installation.html). This will allow you to start a shell inside the singularity container at /cvmfs/eic.opensciencegrid.org/singularity/rhic_sl7_ext with
 ```bash
-singularity shell -e -B /cvmfs:/cvmfs /cvmfs/eic.opensciencegrid.org/singularity/rhic_sl7_ext
+singularity shell -B /cvmfs:/cvmfs /cvmfs/eic.opensciencegrid.org/singularity/rhic_sl7_ext
 ```
 You should get a shell that looks like this:
 ```bash
 Singularity>
 ```
-You should be able to start ROOT in this shell:
-```bash
-root
-```
+You environment will be inherited from the host system. You may need to `unset ROOTSYS` for the following to work.
 
 ### Singularity_shell script
 You can create a 'singularity_shell.sh` script to run when you want to start the singularity container.
