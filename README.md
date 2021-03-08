@@ -46,7 +46,7 @@ export LD_LIBRARY_PATH=$MYINSTALL/lib:$LD_LIBRARY_PATH
 ### Visualize
 ```
 root.exe
-.x Fun4All_G4_BeamLine.C
+.x Fun4All_G4_IP12Compton.C 
 .L DisplayOn.C
 PHG4Reco *g4 = QTGui();  
 ```
@@ -54,7 +54,7 @@ PHG4Reco *g4 = QTGui();
 ### Run gun
 ```
 root.exe
-.x Fun4All_G4_BeamLine.C
+.x Fun4All_G4_IP12Compton.C 
 .L DisplayOn.C
 PHG4Reco *g4 = DisplayOn(); // to still have the command line
 Fun4AllServer *se = Fun4AllServer::instance();
@@ -76,7 +76,7 @@ To run test electrons on the G4 terminal, use:
 ### To run events:
 ```
 root
-.x Fun4All_G4_IP12Compton.C(100,"./milouIn.root","o_ComptonTst.root",false,18")
+.x Fun4All_G4_IP12Compton.C(100,"./milouIn.root","o_ComptonTst.root",false,18)
 ```
 
 ## Setup on Linux with CVMFS and Singularity
